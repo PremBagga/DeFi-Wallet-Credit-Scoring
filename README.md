@@ -117,6 +117,7 @@ python predict.py
 * Integrate cross-protocol behavior (e.g., Compound, Lido)
 
 ---
+➡️ For score distribution and behavioral insights, see [analysis.md](./analysis.md)
 
 ## 👨‍💼 Author
 
