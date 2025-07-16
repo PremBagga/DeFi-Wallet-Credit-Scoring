@@ -130,6 +130,8 @@ streamlit run wallet_score_generator.py
   * Strong financial behavior in the DeFi ecosystem
 
 ---
+Output Image :  <img width="640" height="430" alt="image" src="https://github.com/user-attachments/assets/bb762d4a-4863-4e71-b460-623bd494280b" />
+
 
 ## 📬 Contact
 
