@@ -1,0 +1,32 @@
+[
+  {
+    "user": "0xabc123...",
+    "action": "deposit",
+    "usdValue": 25000.0,
+    "timestamp": 1629000000
+  },
+  {
+    "user": "0xabc123...",
+    "action": "borrow",
+    "usdValue": 12000.0,
+    "timestamp": 1629020000
+  },
+  {
+    "user": "0xabc123...",
+    "action": "repay",
+    "usdValue": 11500.0,
+    "timestamp": 1629100000
+  },
+  {
+    "user": "0xdef456...",
+    "action": "deposit",
+    "usdValue": 3000.0,
+    "timestamp": 1629300000
+  },
+  {
+    "user": "0xdef456...",
+    "action": "redeemunderlying",
+    "usdValue": 2900.0,
+    "timestamp": 1629400000
+  }
+]
