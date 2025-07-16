@@ -1,147 +1,138 @@
-💳 DeFi Wallet Credit Scoring System
-This project implements a machine learning–based system that assigns a credit score (0–1000) to user wallets by analyzing historical DeFi transaction data from the Aave protocol.
+# 💳 DeFi Wallet Credit Score Predictor
 
-🧠 Objective
-✅ Develop a robust machine learning model (XGBoost) to evaluate the creditworthiness of blockchain wallets based only on transaction history, and
-✅ Provide a one-step script (wallet_score_generator.py) to process raw user transaction data from a JSON file and output wallet scores.
+This project implements a **Streamlit-based web application** that predicts a **credit score (0–1000)** for DeFi wallets based solely on their **historical transaction behavior**, using a trained **XGBoost machine learning model**.
 
-📁 Project Structure
-r
-Copy
-Edit
+---
+
+## ✅ Features
+
+* Upload your own JSON file of Aave-like user transactions.
+* Predict credit scores in real-time using the XGBoost model.
+* View processed results in a table.
+* Download the results as a CSV file.
+
+---
+
+## ⚙️ Methodology & Architecture
+
+### 1. **Model Choice:**
+
+* Chosen model: `XGBoostRegressor` due to its strong performance with tabular data and handling of nonlinear relationships.
+* Trained using historical user-level DeFi transaction features like deposit/borrow/repay amounts, ratios, and activity metrics.
+
+### 2. **Features Used:**
+
+| Feature                                                             | Description                                       |
+| ------------------------------------------------------------------- | ------------------------------------------------- |
+| `total_txn_count`                                                   | Number of transactions per wallet                 |
+| `avg_txn_value_usd`                                                 | Average transaction value (USD)                   |
+| `active_days`                                                       | Number of unique days with activity               |
+| `Borrow`, `Deposit`, `Repay`, `RedeemUnderlying`, `LiquidationCall` | Total USD value for each action type              |
+| `borrow_to_deposit_ratio`                                           | Ratio of borrow to deposit volume                 |
+| `repay_to_borrow_ratio`                                             | Ratio of repay to borrow volume                   |
+| `activity_days_span`                                                | Span (in days) between first and last transaction |
+
+These are extracted dynamically from uploaded JSON data before prediction.
+
+---
+
+## ♻️ Processing Flow
+
+```
+📂 Upload JSON File (user_transactions.json)
+    ↓
+📊 Preprocessing:
+   - Clean and normalize fields: user, action, usdValue, timestamp
+   - Convert to Pandas DataFrame
+    ↓
+📈 Feature Extraction:
+   - Group by wallet
+   - Aggregate features listed above
+    ↓
+🤖 Prediction:
+   - Load XGBoost model (`xgboost_credit_model.pkl`)
+   - Score each wallet (0–1000)
+    ↓
+📄 Output:
+   - View scores in a table
+   - Download CSV
+```
+
+---
+
+## 📁 Project Structure
+
+```
 zerutaskprem/
-├── wallet_score_generator.py        <- Core scoring script (XGBoost-based)
-├── xgboost_credit_model.pkl         <- Pre-trained XGBoost model
-├── sample_user_data.json            <- Sample user transactions (input)
-├── wallet_scores_output.csv         <- Output: Wallet-level scores
-├── requirements.txt                 <- Dependencies
-└── README.md                        <- You're here!
-⚙️ How It Works
-1. 💾 Input Format (sample_user_data.json)
-Each JSON record should contain:
+├── xgboost_credit_model.pkl      # Pretrained XGBoost model
+├── wallet_score_generator.py     # Streamlit app (main UI + prediction logic)
+├── sample_user_data.json         # Example transaction input file
+├── wallet_scores.csv             # Output (after upload)
+├── README.md                     # This file
+```
 
-json
-Copy
-Edit
-{
-  "user": "0xabc123...",
-  "action": "deposit",
-  "usdValue": 12000.0,
-  "timestamp": 1628995200
-}
-user: Wallet address
+---
 
-action: Aave transaction type (e.g., deposit, borrow, repay)
+## 🛆 Requirements
 
-usdValue: USD equivalent value of the transaction
+Install dependencies with:
 
-timestamp: Unix timestamp (in seconds)
-
-2. 🛠️ Processing Flow
-a. Preprocessing
-Load and clean the JSON data
-
-Normalize actions, convert timestamps, remove 0-value txns
-
-b. Feature Extraction (per wallet)
-The following behavioral features are extracted:
-
-Feature	Description
-total_txn_count	Total number of transactions
-avg_txn_value_usd	Mean USD value per transaction
-active_days	Unique number of days active
-Borrow, Deposit, Repay	Total USD for each action
-LiquidationCall	Amount liquidated
-borrow_to_deposit_ratio	Ratio of total borrow to deposit
-repay_to_borrow_ratio	Ratio of repay to borrow
-activity_days_span	Duration (in days) between first and last txn
-
-c. Prediction with XGBoost
-The extracted features (except timestamps and wallet) are passed to a trained xgboost_credit_model.pkl model to predict a credit score between 0 (worst) and 1000 (best).
-
-🧪 Model Architecture
-Model: XGBoostRegressor
-
-Trained on: Curated and cleaned Aave v2 transaction dataset
-
-Target: Pseudo-credit score generated using a hybrid rule-based logic
-
-Evaluation:
-
-MAE: ~3.5
-
-R²: 0.999
-
-📌 Feature importance and hyperparameter tuning were done via grid search + domain knowledge.
-
-🖥️ Running the Script
-Place your input JSON file (e.g., sample_user_data.json) in the same directory.
-
-Run:
-
-bash
-Copy
-Edit
-python wallet_score_generator.py sample_user_data.json
-Output will be saved as:
-
-bash
-Copy
-Edit
-wallet_scores_output.csv
-Containing columns like:
-
-wallet	Borrow	Deposit	...	xgboost_score
-
-🧩 Extensibility
-🔍 Add new features: E.g., frequency of borrowing, slippage analysis, etc.
-
-🧠 Swap models: You can replace the XGBoost model with another (e.g., LightGBM, CatBoost)
-
-📉 Custom training: Use your own dataset and labels to retrain the model using xgb_model.fit()
-
-🛡️ Score Logic Transparency
-Scores are learned from a hybrid rule-based + heuristics system, validated with actual wallet behaviors (repayment regularity, liquidation penalties, etc.)
-
-The model places positive weight on:
-
-High repayment ratios
-
-Consistent activity
-
-Low liquidations
-
-Reasonable borrow-to-deposit behavior
-
-📊 Example Output (Snippet)
-Wallet	Borrow	Deposit	Repay	Score
-0xabc123...	12000	25000	11500	716
-0xdef456...	0	3000	0	197
-
-📦 Requirements
-Install using:
-
-bash
-Copy
-Edit
+```bash
 pip install -r requirements.txt
-Dependencies:
+```
 
-xgboost
+Example `requirements.txt`:
 
+```txt
+streamlit
 pandas
-
+xgboost
 joblib
+```
 
-👨‍💻 Author
-Pream Venkatesh Bagga
-B.Tech in CSE (Data Science)
-Saraswati College of Engineering, Mumba
-➡️ For score distribution and behavioral insights, see [analysis.md](./analysis.md)
+---
 
-## 👨‍💼 Author
+## 🚀 Running the App
 
-**Pream Venkatesh Bagga**
+```bash
+streamlit run wallet_score_generator.py
+```
 
-> For questions, contact via LinkedIn or GitHub.
-# DeFi-Wallet-Credit-Scoring
+---
+
+## 📌 Notes
+
+* The model is trained offline and saved as a `.pkl` file (`xgboost_credit_model.pkl`). This app only **loads** and **uses** it.
+* The JSON file should follow this structure:
+
+```json
+[
+  {
+    "user": "0xabc123...",
+    "action": "deposit",
+    "usdValue": 2500,
+    "timestamp": 1628985600
+  },
+  ...
+]
+```
+
+---
+
+## 🧠 Scoring Logic
+
+* The XGBoost model outputs a **continuous score between 0 and 1000**.
+* Higher scores represent wallets with:
+
+  * Active, consistent participation
+  * Balanced borrowing and repayment
+  * Fewer liquidations
+  * Strong financial behavior in the DeFi ecosystem
+
+---
+
+## 📬 Contact
+
+Created by **Prem Venkatesh Bagga**
+CSE(Data Science) , 9.5 CGPA
+Feel free to reach out for improvements or suggestions!
