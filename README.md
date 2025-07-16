@@ -134,5 +134,5 @@ streamlit run wallet_score_generator.py
 ## 📬 Contact
 
 Created by **Prem Venkatesh Bagga**  
-*CSE(Data Science) , 9.5 CGPA*
+*CSE(Data Science) , 9.5 CGPA* 
 Feel free to reach out for improvements or suggestions!
