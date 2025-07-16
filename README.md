@@ -1,122 +1,142 @@
-# README.md
+💳 DeFi Wallet Credit Scoring System
+This project implements a machine learning–based system that assigns a credit score (0–1000) to user wallets by analyzing historical DeFi transaction data from the Aave protocol.
 
-## 📊 DeFi Wallet Credit Scoring - Aave V2
+🧠 Objective
+✅ Develop a robust machine learning model (XGBoost) to evaluate the creditworthiness of blockchain wallets based only on transaction history, and
+✅ Provide a one-step script (wallet_score_generator.py) to process raw user transaction data from a JSON file and output wallet scores.
 
-This project builds a machine learning model to generate credit scores (0-1000) for wallets interacting with the Aave V2 DeFi lending protocol. The scores reflect the reliability and behavior of users based solely on historical transaction-level data.
+📁 Project Structure
+r
+Copy
+Edit
+zerutaskprem/
+├── wallet_score_generator.py        <- Core scoring script (XGBoost-based)
+├── xgboost_credit_model.pkl         <- Pre-trained XGBoost model
+├── sample_user_data.json            <- Sample user transactions (input)
+├── wallet_scores_output.csv         <- Output: Wallet-level scores
+├── requirements.txt                 <- Dependencies
+└── README.md                        <- You're here!
+⚙️ How It Works
+1. 💾 Input Format (sample_user_data.json)
+Each JSON record should contain:
 
----
+json
+Copy
+Edit
+{
+  "user": "0xabc123...",
+  "action": "deposit",
+  "usdValue": 12000.0,
+  "timestamp": 1628995200
+}
+user: Wallet address
 
-## 🧱 Problem Statement
+action: Aave transaction type (e.g., deposit, borrow, repay)
 
-Given raw transaction data (actions like `deposit`, `borrow`, `repay`, `redeemUnderlying`, and `liquidationCall`), assign a **credit score between 0 and 1000** to each wallet.
+usdValue: USD equivalent value of the transaction
 
-* High scores → responsible behavior (good repayments, consistent usage)
-* Low scores → risky, one-shot, bot-like, or exploitative usage
+timestamp: Unix timestamp (in seconds)
 
----
+2. 🛠️ Processing Flow
+a. Preprocessing
+Load and clean the JSON data
 
-## 🔧 Solution Overview
+Normalize actions, convert timestamps, remove 0-value txns
 
-### Step 1: Feature Engineering
+b. Feature Extraction (per wallet)
+The following behavioral features are extracted:
 
-Transaction JSON is flattened and aggregated per wallet into the following features:
+Feature	Description
+total_txn_count	Total number of transactions
+avg_txn_value_usd	Mean USD value per transaction
+active_days	Unique number of days active
+Borrow, Deposit, Repay	Total USD for each action
+LiquidationCall	Amount liquidated
+borrow_to_deposit_ratio	Ratio of total borrow to deposit
+repay_to_borrow_ratio	Ratio of repay to borrow
+activity_days_span	Duration (in days) between first and last txn
 
-* `total_txn_count`
-* `avg_txn_value_usd`
-* `active_days`, `activity_days_span`
-* Total `Deposit`, `Borrow`, `Repay`, `RedeemUnderlying`, `LiquidationCall`
-* Derived Ratios: `borrow_to_deposit_ratio`, `repay_to_borrow_ratio`
+c. Prediction with XGBoost
+The extracted features (except timestamps and wallet) are passed to a trained xgboost_credit_model.pkl model to predict a credit score between 0 (worst) and 1000 (best).
 
-### Step 2: Pseudo Credit Score (Rule-Based)
+🧪 Model Architecture
+Model: XGBoostRegressor
 
-A robust scoring logic mimicking real-world credit systems:
+Trained on: Curated and cleaned Aave v2 transaction dataset
 
-* Rewards:
+Target: Pseudo-credit score generated using a hybrid rule-based logic
 
-  * Large deposits
-  * Good repay-to-borrow ratio
-  * Long-term, consistent activity
-  * Diverse protocol usage
-* Penalties:
+Evaluation:
 
-  * Borrowing without repaying
-  * One-shot deposit + redeem
-  * Very high borrow-to-deposit ratio
+MAE: ~3.5
 
-Final scores are clamped between 0 and 1000.
+R²: 0.999
 
-### Step 3: ML Model Training
+📌 Feature importance and hyperparameter tuning were done via grid search + domain knowledge.
 
-We used two models:
+🖥️ Running the Script
+Place your input JSON file (e.g., sample_user_data.json) in the same directory.
 
-* ✅ **Random Forest Regressor**
-* ✅ **XGBoost Regressor** (best performance)
+Run:
 
-These models were trained using the engineered features and pseudo-scores as labels.
+bash
+Copy
+Edit
+python wallet_score_generator.py sample_user_data.json
+Output will be saved as:
 
----
+bash
+Copy
+Edit
+wallet_scores_output.csv
+Containing columns like:
 
-## 🛠️ Project Architecture
+wallet	Borrow	Deposit	...	xgboost_score
 
-```
-user_transactions.json  -->  flatjson.py  -->  features.csv
-                                         -->  rule_based_score()
-                                         -->  ML model (XGBoost/RandomForest)
-                                         -->  Predict scores
-```
+🧩 Extensibility
+🔍 Add new features: E.g., frequency of borrowing, slippage analysis, etc.
 
----
+🧠 Swap models: You can replace the XGBoost model with another (e.g., LightGBM, CatBoost)
 
-## ⚡ Quick Start
+📉 Custom training: Use your own dataset and labels to retrain the model using xgb_model.fit()
 
-### 1. Flatten JSON and Extract Features:
+🛡️ Score Logic Transparency
+Scores are learned from a hybrid rule-based + heuristics system, validated with actual wallet behaviors (repayment regularity, liquidation penalties, etc.)
 
-```bash
-python flatjson.py
-```
+The model places positive weight on:
 
-### 2. Train Models:
+High repayment ratios
 
-```bash
-python train_model.py
-```
+Consistent activity
 
-### 3. Predict Scores for New Wallets:
+Low liquidations
 
-```bash
-python predict.py
-```
+Reasonable borrow-to-deposit behavior
 
----
+📊 Example Output (Snippet)
+Wallet	Borrow	Deposit	Repay	Score
+0xabc123...	12000	25000	11500	716
+0xdef456...	0	3000	0	197
 
-## 📄 Files & Modules
+📦 Requirements
+Install using:
 
-* `flatjson.py` — parse & flatten JSON to generate features per wallet
-* `rule_based_score.py` — apply rule-based logic for pseudo-scores
-* `train_model.py` — trains RF and XGBoost models on wallet features
-* `predict.py` — uses trained model to assign scores to new data
-* `wallet_features_with_pseudo_score.csv` — intermediate data file
-* `random_forest_credit_model.pkl` & `xgboost_credit_model.pkl`
-* `analysis.md` — score distribution, wallet behavior insights
+bash
+Copy
+Edit
+pip install -r requirements.txt
+Dependencies:
 
----
+xgboost
 
-## 🎯 Results Summary
+pandas
 
-| Model         | MAE      | R² Score  |
-| ------------- | -------- | --------- |
-| Random Forest | 5.12     | 0.997     |
-| XGBoost       | **3.57** | **0.999** |
+joblib
 
----
-
-## 🚀 Future Improvements
-
-* Use true on-chain credit events for label supervision
-* Add token volatility & asset prices
-* Integrate cross-protocol behavior (e.g., Compound, Lido)
-
----
+👨‍💻 Author
+Pream Venkatesh Bagga
+B.Tech in CSE (Data Science)
+Saraswati College of Engineering, Mumba
 ➡️ For score distribution and behavioral insights, see [analysis.md](./analysis.md)
 
 ## 👨‍💼 Author
